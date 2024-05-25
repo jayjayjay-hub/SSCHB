@@ -250,6 +250,8 @@ class PlayerClient:
         board_lines = board.strip().split('\n')[1:]  # インデックス行をスキップ
         board_array = np.array([list(line[1:]) for line in board_lines])  # インデックス列をスキップ
         # board_array index 0-13 x 0-13
+        cp_board = self.init_board(board_array, self._player_char)
+        print(cp_board)
 
         # 最初のターンなら
         if self.trun == 0:
@@ -259,6 +261,45 @@ class PlayerClient:
             actions = self.serch_best_action(board_array, self._player_char)
         self.trun += 1
         return actions
+
+    def init_board(self, board_array_1, player_char):
+        board_array = board_array_1.copy()
+        board_array = np.insert(board_array, 0, '9', axis=0)
+        board_array = np.insert(board_array, 0, '9', axis=1)
+        board_array = np.insert(board_array, board_array.shape[0], '9', axis=0)
+        board_array = np.insert(board_array, board_array.shape[1], '9', axis=1)
+        cp_board = np.zeros(board_array.shape, dtype=np.int8)
+        for i in range(board_array.shape[0]):
+            for j in range(board_array.shape[1]):
+                if board_array[i, j] == '9':
+                    cp_board[i, j] = 9
+                elif board_array[i, j] == player_char:
+                    self.write_corner(cp_board, i, j)
+                elif board_array[i, j] == self._enemy_char:
+                    self.write_enemy(cp_board, i, j)
+
+        return cp_board
+
+    def write_corner(self, cp_board, x, y):
+        array = [[2, 9, 2], [9, 9, 9], [2, 9, 2]]
+        for i in range(3):
+            for j in range(3):
+                if self.priority(cp_board[x + i - 1, y + j - 1], array[i][j]):
+                    cp_board[x + i - 1, y + j - 1] = array[i][j]
+
+    def write_enemy(self, cp_board, x, y):
+        array = [[3, 1, 3], [1, 9, 1], [3, 1, 3]]
+        for i in range(3):
+            for j in range(3):
+                if self.priority(cp_board[x + i - 1, y + j - 1], array[i][j]):
+                    cp_board[x + i - 1, y + j - 1] = array[i][j]
+
+    def priority(self, dst, src):
+        if dst == 1 and src == 3:
+            return False
+        if dst == 3 and src == 1:
+            return True
+        return dst < src
 
     def first_turn(self, board_array, player_char):
         if player_char == 'o':
@@ -272,15 +313,16 @@ class PlayerClient:
         length = len(self._block_types)
         # random choice block_type get not pop
         block_type = self._block_types[random.randint(0, length - 1)]
-        x, y = self.serch_coordinate(board_array, block_type, player_char) # tuple (int, int)
+        rote, x, y = self.serch_coordinate(board_array, block_type, player_char) # tuple (int, int)
         if x >= 0:
             # remove block_type
             self._block_types.pop(self._block_types.index(block_type))
             # int -> str rote
-            # str_rote = str(rote)
+            str_rote = str(rote)
             char_x = self.coordinate_map[x + 1]
             char_y = self.coordinate_map[y + 1]
-            return block_type + '0' + char_x + char_y
+            print(f'block_type: {block_type}, rote: {rote}, x: {x}, y: {y}')
+            return block_type + str_rote + char_x + char_y
         elif serch_count < 10:
             # one more chance
             return self.serch_best_action(board_array, player_char, serch_count + 1)
@@ -296,9 +338,11 @@ class PlayerClient:
 
         for i in range(board_height - block_height + 1): # if block_height = 3, range(12)
             for j in range(board_width - block_width + 1):
-                if self.is_legal_move(board_array, block, j, i, player_char):
-                    return i, j
-        return -1, -1
+                for k in range(8):
+                    block = BlockType.rotate_and_flip(block, k)
+                    if self.is_legal_move(board_array, block, j, i, player_char):
+                        return k, i, j
+        return -1, -1, -1
 
     def is_legal_move(self, board_array, block, x, y, player_char):
         board_height, board_width = board_array.shape # (14, 14)
@@ -338,7 +382,7 @@ class PlayerClient:
         if (x < 13 and y < 13) and board_array[x + 1, y + 1] == player_char:
             return True
         return False
-    
+
     def check_touch_the_edge(self, board_array, x, y, player_char):
         # board_array 14x14 numpy array (index 0-13 x 0-13)
         if x > 0 and board_array[x - 1, y] == player_char:
