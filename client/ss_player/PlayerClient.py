@@ -3,8 +3,6 @@ import asyncio
 import websockets
 
 import numpy as np
-from enum import Enum
-from typing import Any
 
 import random
 
@@ -42,18 +40,19 @@ class PlayerClient:
         board_lines = board.strip().split('\n')[1:]  # インデックス行をスキップ
         board_array = np.array([list(line[1:]) for line in board_lines])  # インデックス列をスキップ
         # board_array index 0-13 x 0-13
-        cp_board = self.init_board(board_array, self._player_char)
-        # print(cp_board)
-        # print('\n')
-        # print(self.tmp_board)
 
         # 最初のターンなら
         if self.trun == 0:
             actions = self.first_turn(board_array, self._player_char)
+            self.trun += 1
+            return actions
+
+        cp_board = self.init_board(board_array, self._player_char)
+        # print(cp_board)
+        # print('\n')
+        # print(self.tmp_board)
         # 2ターン目以降なら
-        else:
-            actions = self.serch_best_action(cp_board)
-            print(actions)
+        actions = self.serch_best_action(cp_board)
         self.trun += 1
         return actions
 
@@ -106,10 +105,10 @@ class PlayerClient:
 
     def first_turn(self, board_array, player_char):
         if player_char == 'o':
-            block_type = self._block_types.pop(self._block_types.index('Q'))
+            block_type = self._block_types.pop(self._block_types.index('S'))
             return block_type + '055'
         if player_char == 'x':
-            block_type = self._block_types.pop(self._block_types.index('Q'))
+            block_type = self._block_types.pop(self._block_types.index('S'))
             return block_type + '488'
 
     def serch_best_action(self, cp_board):
