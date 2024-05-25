@@ -8,3 +8,5 @@
 /client/blocks_duo_ss_tarou.egg-info/
 /client/build/
 /ssvenv/
+
+ss*.log
