@@ -6,6 +6,8 @@ import numpy as np
 from enum import Enum
 from typing import Any
 
+import random
+
 class BlockType(Enum):
     A = 'A'
     B = 'B'
@@ -193,9 +195,29 @@ class BlockType(Enum):
                  
             '''
             return np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
-        
+
         else:
             raise NotImplementedError
+
+    def rotate_and_flip(block, transformation):
+        if transformation == 0:
+            return block
+        elif transformation == 1:
+            return np.flipud(block)
+        elif transformation == 2:
+            return np.rot90(block)
+        elif transformation == 3:
+            return np.rot90(np.flipud(block))
+        elif transformation == 4:
+            return np.rot90(block, 2)
+        elif transformation == 5:
+            return np.rot90(np.flipud(block), 2)
+        elif transformation == 6:
+            return np.rot90(block, 3)
+        elif transformation == 7:
+            return np.rot90(np.flipud(block), 3)
+        else:
+            raise ValueError("Invalid transformation")
 
 class PlayerClient:
     def __init__(self, player_number: int, socket: websockets.WebSocketClientProtocol, loop: asyncio.AbstractEventLoop):
@@ -246,22 +268,31 @@ class PlayerClient:
             block_type = self._block_types.pop(self._block_types.index('Q'))
             return block_type + '488'
 
-    def serch_best_action(self, board_array, player_char):
-        block_type = self._block_types.pop(0)
+    def serch_best_action(self, board_array, player_char, serch_count=0):
+        length = len(self._block_types)
+        # random choice block_type get not pop
+        block_type = self._block_types[random.randint(0, length - 1)]
         x, y = self.serch_coordinate(board_array, block_type, player_char) # tuple (int, int)
-        if x == -1:
+        if x >= 0:
+            # remove block_type
+            self._block_types.pop(self._block_types.index(block_type))
+            # int -> str rote
+            # str_rote = str(rote)
+            char_x = self.coordinate_map[x + 1]
+            char_y = self.coordinate_map[y + 1]
+            return block_type + '0' + char_x + char_y
+        elif serch_count < 10:
+            # one more chance
+            return self.serch_best_action(board_array, player_char, serch_count + 1)
+        else:
             return 'X000'
-        char_x = self.coordinate_map[x + 1]
-        char_y = self.coordinate_map[y + 1]
-
-        return block_type + '0' + char_x + char_y
 
     def serch_coordinate(self, board_array, block_type, player_char):
         # board_array 14x14 numpy array (index 0-13 x 0-13)
         block = BlockType(block_type).block_map # numpy array
 
         board_height, board_width = board_array.shape # (14, 14)
-        block_height, block_width = block.shape # (3, 3)
+        block_height, block_width = block.shape
 
         for i in range(board_height - block_height + 1): # if block_height = 3, range(12)
             for j in range(board_width - block_width + 1):
