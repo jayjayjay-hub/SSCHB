@@ -4,7 +4,7 @@ import websockets
 
 import numpy as np
 
-import random
+# import random
 
 from ss_player.BlockType import BlockType
 
@@ -105,10 +105,10 @@ class PlayerClient:
 
     def first_turn(self, board_array, player_char):
         if player_char == 'o':
-            block_type = self._block_types.pop(self._block_types.index('S'))
+            block_type = self._block_types.pop(self._block_types.index('R'))
             return block_type + '055'
         if player_char == 'x':
-            block_type = self._block_types.pop(self._block_types.index('S'))
+            block_type = self._block_types.pop(self._block_types.index('R'))
             return block_type + '488'
 
     def serch_best_action(self, cp_board):
