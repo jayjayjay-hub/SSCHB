@@ -8,204 +8,7 @@ from typing import Any
 
 import random
 
-class BlockType(Enum):
-    A = 'A'
-    B = 'B'
-    C = 'C'
-    D = 'D'
-    E = 'E'
-    F = 'F'
-    G = 'G'
-    H = 'H'
-    I = 'I'
-    J = 'J'
-    K = 'K'
-    L = 'L'
-    M = 'M'
-    N = 'N'
-    O = 'O'
-    P = 'P'
-    Q = 'Q'
-    R = 'R'
-    S = 'S'
-    T = 'T'
-    U = 'U'
-    X = 'X'
-
-    @property
-    def block_map(self) -> np.ndarray[Any, np.dtype[int]]:
-        if self == BlockType.A:
-            return np.array([[1]])
-        elif self == BlockType.B:
-            return np.array([[1], [1]])
-        elif self == BlockType.C:
-            return np.array([[1], [1], [1]])
-        elif self == BlockType.D:
-            '''
-            type D:
-             ■ 
-             ■ ■ 
-            '''
-            return np.array([[1, 0], [1, 1]])
-        elif self == BlockType.E:
-            '''
-            type E:
-             ■ 
-             ■ 
-             ■ 
-             ■ 
-            '''
-            return np.array([[1], [1], [1], [1]])
-        elif self == BlockType.F:
-            '''
-            type F:
-               ■ 
-               ■ 
-             ■ ■ 
-            '''
-            return np.array([[0, 1], [0, 1], [1, 1]])
-        elif self == BlockType.G:
-            '''
-            type G:
-             ■ 
-             ■ ■ 
-             ■    
-            '''
-            return np.array([[1, 0], [1, 1], [1, 0]])
-        elif self == BlockType.H:
-            '''
-            type H:
-             ■ ■ 
-             ■ ■ 
-            '''
-            return np.array([[1, 1], [1, 1]])
-        elif self == BlockType.I:
-            '''
-            type I:
-             ■ ■ 
-               ■ ■ 
-            '''
-            return np.array([[1, 1, 0], [0, 1, 1]])
-        elif self == BlockType.J:
-            '''
-            type J:
-             ■ 
-             ■ 
-             ■ 
-             ■ 
-             ■ 
-            '''
-            return np.array([[1], [1], [1], [1], [1]])
-        elif self == BlockType.K:
-            '''
-            type K:
-               ■ 
-               ■ 
-               ■ 
-             ■ ■ 
-            '''
-            return np.array([[0, 1], [0, 1], [0, 1], [1, 1]])
-        elif self == BlockType.L:
-            '''
-            type L:
-               ■ 
-               ■ 
-             ■ ■ 
-             ■ 
-            '''
-            return np.array([[0, 1], [0, 1], [1, 1], [1, 0]])
-        elif self == BlockType.M:
-            '''
-            type M:
-               ■ 
-             ■ ■ 
-             ■ ■ 
-            '''
-            return np.array([[0, 1], [1, 1], [1, 1]])
-        elif self == BlockType.N:
-            '''
-            type N:
-             ■ ■ 
-               ■ 
-             ■ ■ 
-            '''
-            return np.array([[1, 1], [0, 1], [1, 1]])
-        elif self == BlockType.O:
-            '''
-            type O:
-             ■ 
-             ■ ■ 
-             ■ 
-             ■ 
-            '''
-            return np.array([[1, 0], [1, 1], [1, 0], [1, 0]])
-        elif self == BlockType.P:
-            '''
-            type P:
-               ■ 
-               ■ 
-             ■ ■ ■ 
-            '''
-            return np.array([[0, 1, 0], [0, 1, 0], [1, 1, 1]])
-        elif self == BlockType.Q:
-            '''
-            type Q:
-             ■ 
-             ■ 
-             ■ ■ ■ 
-            '''
-            return np.array([[1, 0, 0], [1, 0, 0], [1, 1, 1]])
-        elif self == BlockType.R:
-            '''
-            type R:
-             ■ ■ 
-               ■ ■ 
-                 ■ 
-            '''
-            return np.array([[1, 1, 0], [0, 1, 1], [0, 0, 1]])
-        elif self == BlockType.S:
-            '''
-            type S:
-             ■ 
-             ■ ■ ■ 
-                 ■ 
-            '''
-            return np.array([[1, 0, 0], [1, 1, 1], [0, 0, 1]])
-        elif self == BlockType.T:
-            '''
-            type T:
-             ■ 
-             ■ ■ ■ 
-               ■ 
-            '''
-            return np.array([[1, 0, 0], [1, 1, 1], [0, 1, 0]])
-        elif self == BlockType.U:
-            '''
-            type U:
-               ■ 
-             ■ ■ ■ 
-               ■ 
-            '''
-            return np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
-        elif self == BlockType.X:
-            '''
-            type X:パスをする時用
-                 
-                   
-                 
-            '''
-            return np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
-
-        else:
-            raise NotImplementedError
-
-    def rotate_and_flip(block, transformation):
-        tmp = block.copy()
-        if transformation >= 2:
-            tmp = np.rot90(tmp, 4 - transformation / 2)
-        if transformation % 2 == 1:
-            tmp = np.fliplr(tmp)
-        return tmp
+from ss_player.BlockType import BlockType
 
 class PlayerClient:
     def __init__(self, player_number: int, socket: websockets.WebSocketClientProtocol, loop: asyncio.AbstractEventLoop):
@@ -216,8 +19,8 @@ class PlayerClient:
         self._enemy_char = 'x' if player_number == 1 else 'o'
         self._block_types = [chr(i) for i in range(65, 86)] + ['X']
         self.coordinate_map = {1: '1', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 10: 'A', 11: 'B', 12: 'C', 13: 'D', 14: 'E'}
-        self.trun = 0
         self.tmp_board = None
+        self.trun = 0
 
     @property
     def player_number(self) -> int:
@@ -240,9 +43,6 @@ class PlayerClient:
         board_array = np.array([list(line[1:]) for line in board_lines])  # インデックス列をスキップ
         # board_array index 0-13 x 0-13
         cp_board = self.init_board(board_array, self._player_char)
-        # print(cp_board)
-        # print("\n")
-        # print(self.tmp_board)
 
         # 最初のターンなら
         if self.trun == 0:
@@ -253,21 +53,21 @@ class PlayerClient:
         self.trun += 1
         return actions
 
-    def init_board(self, board_array_1, player_char):
-        board_array = board_array_1.copy()
-        board_array = np.insert(board_array, 0, '9', axis=0)
-        board_array = np.insert(board_array, 0, '9', axis=1)
-        board_array = np.insert(board_array, board_array.shape[0], '9', axis=0)
-        board_array = np.insert(board_array, board_array.shape[1], '9', axis=1)
-        cp_board = np.zeros(board_array.shape, dtype=np.int8)
-        self.tmp_board = np.zeros(board_array.shape, dtype=np.int8)
-        for i in range(board_array.shape[0]):
-            for j in range(board_array.shape[1]):
-                if board_array[i, j] == '9':
+    def init_board(self, board_array, player_char):
+        expansion_board = board_array.copy()
+        expansion_board = np.insert(expansion_board, 0, '9', axis=0)
+        expansion_board = np.insert(expansion_board, 0, '9', axis=1)
+        expansion_board = np.insert(expansion_board, expansion_board.shape[0], '9', axis=0)
+        expansion_board = np.insert(expansion_board, expansion_board.shape[1], '9', axis=1)
+        cp_board = np.zeros(expansion_board.shape, dtype=np.int8)
+        self.tmp_board = np.zeros(expansion_board.shape, dtype=np.int8)
+        for i in range(expansion_board.shape[0]):
+            for j in range(expansion_board.shape[1]):
+                if expansion_board[i, j] == '9':
                     cp_board[i, j] = 9
-                elif board_array[i, j] == player_char:
+                elif expansion_board[i, j] == player_char:
                     self.write_corner(cp_board, i, j)
-                elif board_array[i, j] == self._enemy_char:
+                elif expansion_board[i, j] == self._enemy_char:
                     self.write_enemy(cp_board, i, j)
 
         for i in range(cp_board.shape[0]):
@@ -321,7 +121,6 @@ class PlayerClient:
             str_rote = str(rote)
             char_x = self.coordinate_map[x + 1]
             char_y = self.coordinate_map[y + 1]
-            print(f"block_type: {block_type}, rote: {str_rote}, x: {char_x}, y: {char_y}")
             return block_type + str_rote + char_x + char_y
             # return block_type + '0' + char_x + char_y
         elif serch_count < 10:
@@ -341,7 +140,6 @@ class PlayerClient:
             for j in range(board_width - block_width + 1):
                 for k in range(8):
                     tmp_block = BlockType.rotate_and_flip(block, k)
-                    print(tmp_block)
                     if self.is_legal_move(board_array, tmp_block, j, i, player_char):
                         return k, i, j
         return -1, -1, -1
