@@ -43,13 +43,17 @@ class PlayerClient:
         board_array = np.array([list(line[1:]) for line in board_lines])  # インデックス列をスキップ
         # board_array index 0-13 x 0-13
         cp_board = self.init_board(board_array, self._player_char)
+        # print(cp_board)
+        # print('\n')
+        # print(self.tmp_board)
 
         # 最初のターンなら
         if self.trun == 0:
             actions = self.first_turn(board_array, self._player_char)
         # 2ターン目以降なら
         else:
-            actions = self.serch_best_action(board_array, self._player_char)
+            actions = self.serch_best_action(cp_board)
+            print(actions)
         self.trun += 1
         return actions
 
@@ -108,26 +112,63 @@ class PlayerClient:
             block_type = self._block_types.pop(self._block_types.index('Q'))
             return block_type + '488'
 
-    def serch_best_action(self, board_array, player_char, serch_count=0):
-        length = len(self._block_types)
-        # random choice block_type get not pop
-        block_type = self._block_types[random.randint(0, length - 1)]
-        rote, x, y = self.serch_coordinate(board_array, block_type, player_char) # tuple (int, int)
-        # x, y = self.serch_coordinate(board_array, block_type, player_char) # tuple (int, int)
-        if x >= 0:
-            # remove block_type
-            self._block_types.pop(self._block_types.index(block_type))
-            # int -> str rote
-            str_rote = str(rote)
-            char_x = self.coordinate_map[x + 1]
-            char_y = self.coordinate_map[y + 1]
-            return block_type + str_rote + char_x + char_y
-            # return block_type + '0' + char_x + char_y
-        elif serch_count < 10:
-            # one more chance
-            return self.serch_best_action(board_array, player_char, serch_count + 1)
-        else:
+    def serch_best_action(self, cp_board):
+        best = 0
+        best_action = ''
+        # reverse _block_types
+        for block_type in self._block_types[::-1]:
+            for rote in range(8):
+                for x in range(1, cp_board.shape[0] - 1):
+                    for y in range(1, cp_board.shape[1] - 1):
+                        if self.check_in_corner(cp_board, BlockType(block_type).block_map, x, y):
+                            prio = self.calc_prio(cp_board, BlockType(block_type).block_map, x, y)
+                            if prio > best:
+                                best = prio
+                                best_action = block_type + str(rote) + self.coordinate_map[x] + self.coordinate_map[y]
+
+        if best_action == '':
             return 'X000'
+        self._block_types.pop(self._block_types.index(best_action[0]))
+        return best_action
+
+    def calc_prio(self, cp_board, block, x, y) -> int:
+        prio = 0
+        for i in range(block.shape[0]):
+            for j in range(block.shape[1]):
+                if block[i, j] == 1:
+                    prio += cp_board[y + i, x + j]
+        return prio
+
+    def check_in_corner(self, cp_board, block, x, y):
+        ans = False
+        for i in range(block.shape[0]):
+            for j in range(block.shape[1]):
+                if block[i, j] == 1 and cp_board[y + i, x + j] == 9:
+                    return False
+                if block[i, j] == 1 and self.tmp_board[y + i, x + j]:
+                    ans = True
+        return ans
+
+    # def serch_best_action(self, board_array, player_char, serch_count=0):
+    #     length = len(self._block_types)
+    #     # random choice block_type get not pop
+    #     block_type = self._block_types[random.randint(0, length - 1)]
+    #     rote, x, y = self.serch_coordinate(board_array, block_type, player_char) # tuple (int, int)
+    #     # x, y = self.serch_coordinate(board_array, block_type, player_char) # tuple (int, int)
+    #     if x >= 0:
+    #         # remove block_type
+    #         self._block_types.pop(self._block_types.index(block_type))
+    #         # int -> str rote
+    #         str_rote = str(rote)
+    #         char_x = self.coordinate_map[x + 1]
+    #         char_y = self.coordinate_map[y + 1]
+    #         return block_type + str_rote + char_x + char_y
+    #         # return block_type + '0' + char_x + char_y
+    #     elif serch_count < 10:
+    #         # one more chance
+    #         return self.serch_best_action(board_array, player_char, serch_count + 1)
+    #     else:
+    #         return 'X000'
 
     def serch_coordinate(self, board_array, block_type, player_char):
         # board_array 14x14 numpy array (index 0-13 x 0-13)

@@ -201,12 +201,8 @@ class BlockType(Enum):
         elif self == BlockType.X:
             '''
             type X:パスをする時用
-                 
-                   
-                 
             '''
             return np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
-        
         else:
             raise NotImplementedError
 
