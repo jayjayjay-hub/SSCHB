@@ -229,6 +229,7 @@ class PlayerClient:
         self._block_types = [chr(i) for i in range(65, 86)] + ['X']
         self.coordinate_map = {1: '1', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 10: 'A', 11: 'B', 12: 'C', 13: 'D', 14: 'E'}
         self.trun = 0
+        self.tmp_board = None
 
     @property
     def player_number(self) -> int:
@@ -252,6 +253,8 @@ class PlayerClient:
         # board_array index 0-13 x 0-13
         cp_board = self.init_board(board_array, self._player_char)
         print(cp_board)
+        print("\n")
+        print(self.tmp_board)
 
         # 最初のターンなら
         if self.trun == 0:
@@ -269,6 +272,7 @@ class PlayerClient:
         board_array = np.insert(board_array, board_array.shape[0], '9', axis=0)
         board_array = np.insert(board_array, board_array.shape[1], '9', axis=1)
         cp_board = np.zeros(board_array.shape, dtype=np.int8)
+        self.tmp_board = np.zeros(board_array.shape, dtype=np.int8)
         for i in range(board_array.shape[0]):
             for j in range(board_array.shape[1]):
                 if board_array[i, j] == '9':
@@ -277,6 +281,11 @@ class PlayerClient:
                     self.write_corner(cp_board, i, j)
                 elif board_array[i, j] == self._enemy_char:
                     self.write_enemy(cp_board, i, j)
+
+        for i in range(cp_board.shape[0]):
+            for j in range(cp_board.shape[1]):
+                if cp_board[i, j] == 2:
+                    self.tmp_board[i, j] = True
 
         return cp_board
 
@@ -292,6 +301,8 @@ class PlayerClient:
         for i in range(3):
             for j in range(3):
                 if self.priority(cp_board[x + i - 1, y + j - 1], array[i][j]):
+                    if cp_board[x + i - 1, y + j - 1] == 2 and array[i][j] == 3:
+                        self.tmp_board[x + i - 1, y + j - 1] = True
                     cp_board[x + i - 1, y + j - 1] = array[i][j]
 
     def priority(self, dst, src):
@@ -313,16 +324,17 @@ class PlayerClient:
         length = len(self._block_types)
         # random choice block_type get not pop
         block_type = self._block_types[random.randint(0, length - 1)]
-        rote, x, y = self.serch_coordinate(board_array, block_type, player_char) # tuple (int, int)
+        # rote, x, y = self.serch_coordinate(board_array, block_type, player_char) # tuple (int, int)
+        x, y = self.serch_coordinate(board_array, block_type, player_char) # tuple (int, int)
         if x >= 0:
             # remove block_type
             self._block_types.pop(self._block_types.index(block_type))
             # int -> str rote
-            str_rote = str(rote)
+            # str_rote = str(rote)
             char_x = self.coordinate_map[x + 1]
             char_y = self.coordinate_map[y + 1]
-            print(f'block_type: {block_type}, rote: {rote}, x: {x}, y: {y}')
-            return block_type + str_rote + char_x + char_y
+            # return block_type + str_rote + char_x + char_y
+            return block_type + '0' + char_x + char_y
         elif serch_count < 10:
             # one more chance
             return self.serch_best_action(board_array, player_char, serch_count + 1)
@@ -338,11 +350,9 @@ class PlayerClient:
 
         for i in range(board_height - block_height + 1): # if block_height = 3, range(12)
             for j in range(board_width - block_width + 1):
-                for k in range(8):
-                    block = BlockType.rotate_and_flip(block, k)
-                    if self.is_legal_move(board_array, block, j, i, player_char):
-                        return k, i, j
-        return -1, -1, -1
+                if self.is_legal_move(board_array, block, j, i, player_char):
+                    return i, j
+        return -1, -1
 
     def is_legal_move(self, board_array, block, x, y, player_char):
         board_height, board_width = board_array.shape # (14, 14)
