@@ -225,7 +225,6 @@ class PlayerClient:
 
     def create_action(self, board):
         # ボードの状態を2次元配列に変換
-        board = '0' + board.lstrip('\n')
         board_lines = board.strip().split('\n')[1:]  # インデックス行をスキップ
         board_array = np.array([list(line[1:]) for line in board_lines])  # インデックス列をスキップ
         # board_array index 0-13 x 0-13
@@ -266,7 +265,7 @@ class PlayerClient:
 
         for i in range(board_height - block_height + 1): # if block_height = 3, range(12)
             for j in range(board_width - block_width + 1):
-                if self.is_legal_move(board_array, block, i, j, player_char):
+                if self.is_legal_move(board_array, block, j, i, player_char):
                     return i, j
         return -1, -1
 
@@ -279,8 +278,8 @@ class PlayerClient:
             for j in range(block_width):
                 if block[i, j] == 1:
                     # ボードの範囲外かどうか
-                    # if x + i >= board_height or y + j >= board_width:
-                    #     return False
+                    if x + i >= board_height or y + j >= board_width:
+                        return False
 
                     # 空いているマスかどうか
                     if board_array[x + i, y + j] != '.':
@@ -288,10 +287,10 @@ class PlayerClient:
 
                     # 自分の他のブロックの角と接しているか
                     if not touch_the_corner:
-                        touch_the_corner = self.check_touch_the_corner(board_array, x, y, player_char)
+                        touch_the_corner = self.check_touch_the_corner(board_array, x + i, y + j, player_char)
 
-                    # 他のブロックの辺に接しているか
-                    if self.check_touch_the_edge(board_array, x, y, player_char):
+                    # 他のブロックの辺に接しているか)
+                    if self.check_touch_the_edge(board_array, x + i, y + j, player_char):
                         return False
         if not touch_the_corner:
             return False
