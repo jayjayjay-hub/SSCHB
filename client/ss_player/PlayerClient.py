@@ -200,24 +200,12 @@ class BlockType(Enum):
             raise NotImplementedError
 
     def rotate_and_flip(block, transformation):
-        if transformation == 0:
-            return block
-        elif transformation == 1:
-            return np.flipud(block)
-        elif transformation == 2:
-            return np.rot90(block)
-        elif transformation == 3:
-            return np.rot90(np.flipud(block))
-        elif transformation == 4:
-            return np.rot90(block, 2)
-        elif transformation == 5:
-            return np.rot90(np.flipud(block), 2)
-        elif transformation == 6:
-            return np.rot90(block, 3)
-        elif transformation == 7:
-            return np.rot90(np.flipud(block), 3)
-        else:
-            raise ValueError("Invalid transformation")
+        tmp = block.copy()
+        if transformation >= 2:
+            tmp = np.rot90(tmp, 4 - transformation / 2)
+        if transformation % 2 == 1:
+            tmp = np.fliplr(tmp)
+        return tmp
 
 class PlayerClient:
     def __init__(self, player_number: int, socket: websockets.WebSocketClientProtocol, loop: asyncio.AbstractEventLoop):
@@ -252,9 +240,9 @@ class PlayerClient:
         board_array = np.array([list(line[1:]) for line in board_lines])  # インデックス列をスキップ
         # board_array index 0-13 x 0-13
         cp_board = self.init_board(board_array, self._player_char)
-        print(cp_board)
-        print("\n")
-        print(self.tmp_board)
+        # print(cp_board)
+        # print("\n")
+        # print(self.tmp_board)
 
         # 最初のターンなら
         if self.trun == 0:
@@ -324,17 +312,18 @@ class PlayerClient:
         length = len(self._block_types)
         # random choice block_type get not pop
         block_type = self._block_types[random.randint(0, length - 1)]
-        # rote, x, y = self.serch_coordinate(board_array, block_type, player_char) # tuple (int, int)
-        x, y = self.serch_coordinate(board_array, block_type, player_char) # tuple (int, int)
+        rote, x, y = self.serch_coordinate(board_array, block_type, player_char) # tuple (int, int)
+        # x, y = self.serch_coordinate(board_array, block_type, player_char) # tuple (int, int)
         if x >= 0:
             # remove block_type
             self._block_types.pop(self._block_types.index(block_type))
             # int -> str rote
-            # str_rote = str(rote)
+            str_rote = str(rote)
             char_x = self.coordinate_map[x + 1]
             char_y = self.coordinate_map[y + 1]
-            # return block_type + str_rote + char_x + char_y
-            return block_type + '0' + char_x + char_y
+            print(f"block_type: {block_type}, rote: {str_rote}, x: {char_x}, y: {char_y}")
+            return block_type + str_rote + char_x + char_y
+            # return block_type + '0' + char_x + char_y
         elif serch_count < 10:
             # one more chance
             return self.serch_best_action(board_array, player_char, serch_count + 1)
@@ -350,9 +339,12 @@ class PlayerClient:
 
         for i in range(board_height - block_height + 1): # if block_height = 3, range(12)
             for j in range(board_width - block_width + 1):
-                if self.is_legal_move(board_array, block, j, i, player_char):
-                    return i, j
-        return -1, -1
+                for k in range(8):
+                    tmp_block = BlockType.rotate_and_flip(block, k)
+                    print(tmp_block)
+                    if self.is_legal_move(board_array, tmp_block, j, i, player_char):
+                        return k, i, j
+        return -1, -1, -1
 
     def is_legal_move(self, board_array, block, x, y, player_char):
         board_height, board_width = board_array.shape # (14, 14)
