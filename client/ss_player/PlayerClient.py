@@ -8,7 +8,19 @@ import numpy as np
 
 from ss_player.BlockType import BlockType
 
+
 class PlayerClient:
+
+    FREE_SPACE = 2
+    SIDE_ENEMY = 1
+    PRE_VERTEX_PLAYER = 3
+    VERTEX_PLAYER = -1
+    VERTEX_ENEMY = 5
+    DISABLE = 9
+
+    DEPTH = 3
+    BREADTH = 10
+
     def __init__(self, player_number: int, socket: websockets.WebSocketClientProtocol, loop: asyncio.AbstractEventLoop):
         self._loop = loop
         self._socket = socket
@@ -67,7 +79,7 @@ class PlayerClient:
         for i in range(expansion_board.shape[0]):
             for j in range(expansion_board.shape[1]):
                 if expansion_board[i, j] == '9':
-                    cp_board[i, j] = 9
+                    cp_board[i, j] = self.DISABLE
                 elif expansion_board[i, j] == player_char:
                     self.write_corner(cp_board, i, j)
                 elif expansion_board[i, j] == self._enemy_char:
@@ -75,31 +87,38 @@ class PlayerClient:
 
         for i in range(cp_board.shape[0]):
             for j in range(cp_board.shape[1]):
-                if cp_board[i, j] == 2:
+                if cp_board[i, j] == self.PRE_VERTEX_PLAYER:
                     self.tmp_board[i, j] = True
+                    cp_board[i, j] = self.VERTEX_PLAYER
+                elif cp_board[i, j] == 0:
+                    cp_board[i, j] = self.FREE_SPACE
 
         return cp_board
 
     def write_corner(self, cp_board, x, y):
-        array = [[2, 9, 2], [9, 9, 9], [2, 9, 2]]
+        array = [[self.PRE_VERTEX_PLAYER, self.DISABLE, self.PRE_VERTEX_PLAYER],
+                 [self.DISABLE, self.DISABLE, self.DISABLE],
+                 [self.PRE_VERTEX_PLAYER, self.DISABLE, self.PRE_VERTEX_PLAYER]]
         for i in range(3):
             for j in range(3):
                 if self.priority(cp_board[x + i - 1, y + j - 1], array[i][j]):
                     cp_board[x + i - 1, y + j - 1] = array[i][j]
 
     def write_enemy(self, cp_board, x, y):
-        array = [[3, 1, 3], [1, 9, 1], [3, 1, 3]]
+        array = [[self.VERTEX_ENEMY, self.SIDE_ENEMY, self.VERTEX_ENEMY],
+                 [self.SIDE_ENEMY, self.DISABLE, self.SIDE_ENEMY],
+                 [self.VERTEX_ENEMY, self.SIDE_ENEMY, self.VERTEX_ENEMY]]
         for i in range(3):
             for j in range(3):
                 if self.priority(cp_board[x + i - 1, y + j - 1], array[i][j]):
-                    if cp_board[x + i - 1, y + j - 1] == 2 and array[i][j] == 3:
+                    if cp_board[x + i - 1, y + j - 1] == self.PRE_VERTEX_PLAYER and array[i][j] == self.VERTEX_ENEMY:
                         self.tmp_board[x + i - 1, y + j - 1] = True
                     cp_board[x + i - 1, y + j - 1] = array[i][j]
 
     def priority(self, dst, src):
-        if dst == 1 and src == 3:
+        if dst == self.SIDE_ENEMY and src == self.VERTEX_ENEMY:
             return False
-        if dst == 3 and src == 1:
+        if dst == self.VERTEX_ENEMY and src == self.SIDE_ENEMY:
             return True
         return dst < src
 
@@ -112,7 +131,7 @@ class PlayerClient:
             return block_type + '488'
 
     def serch_best_action(self, cp_board):
-        best = 0
+        best = -100
         best_action = ''
         # reverse _block_types
         for block_type in self._block_types[::-1]:
@@ -142,7 +161,7 @@ class PlayerClient:
         ans = False
         for i in range(block.shape[0]):
             for j in range(block.shape[1]):
-                if block[i, j] == 1 and cp_board[y + i, x + j] == 9:
+                if block[i, j] == 1 and cp_board[y + i, x + j] == self.DISABLE:
                     return False
                 if block[i, j] == 1 and self.tmp_board[y + i, x + j]:
                     ans = True
